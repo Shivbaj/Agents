@@ -79,6 +79,10 @@ class GeneralAssistant(BaseAgent):
             **kwargs
         )
         
+        # Set additional attributes for metadata
+        self.model_provider = "openai" if settings.openai_api_key else "ollama"
+        self.model_name = settings.openai_default_model if settings.openai_api_key else "phi3:mini"
+        
         self.memory_manager = memory_manager
         self.prompt_manager = PromptManager()
         self.supports_streaming = True

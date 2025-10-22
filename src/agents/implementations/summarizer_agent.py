@@ -29,10 +29,12 @@ class SummarizerAgent(BaseAgent):
                 "conversation_summarization",
                 "key_points_extraction",
                 "executive_summary_generation"
-            ],
-            model_provider="openai",
-            model_name="gpt-4-turbo-preview"
+            ]
         )
+        
+        # Set agent metadata
+        self.model_provider = "openai"
+        self.model_name = "gpt-4-turbo-preview"
         self.model_manager = None
         self.supports_streaming = True
         

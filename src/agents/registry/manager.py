@@ -256,46 +256,6 @@ class AgentManager:
         except Exception as e:
             logger.error(f"Failed to unregister agent {agent_id}: {str(e)}")
             return False
-    
-    def register_agent(self, agent: BaseAgent):
-        """Register an agent instance (synchronous version)"""
-        try:
-            self.agents[agent.agent_id] = agent
-            self.agent_metadata[agent.agent_id] = {
-                "id": agent.agent_id,
-                "name": agent.name,
-                "description": agent.description,
-                "agent_type": getattr(agent, 'agent_type', 'general'),
-                "capabilities": agent.capabilities,
-                "model_provider": getattr(agent, 'model_provider', 'ollama'),
-                "model_name": getattr(agent, 'model_name', 'phi3:mini'),
-                "status": "active",
-                "supports_streaming": getattr(agent, 'supports_streaming', False),
-                "supports_multimodal": getattr(agent, 'supports_multimodal', False),
-                "created_at": datetime.now(),
-                "updated_at": datetime.now(),
-            }
-            
-            logger.info(f"Registered agent: {agent.agent_id}")
-            
-        except Exception as e:
-            logger.error(f"Failed to register agent {agent.agent_id}: {str(e)}")
-            raise
-    
-    def unregister_agent(self, agent_id: str) -> bool:
-        """Unregister an agent (synchronous version)"""
-        try:
-            if agent_id in self.agents:
-                # Note: cleanup is async, but we can't await here
-                # In production, you might want to handle this differently
-                del self.agents[agent_id]
-                del self.agent_metadata[agent_id]
-                logger.info(f"Unregistered agent: {agent_id}")
-                return True
-            return False
-        except Exception as e:
-            logger.error(f"Failed to unregister agent {agent_id}: {str(e)}")
-            return False
 
     async def cleanup(self):
         """Cleanup all agents and resources"""

@@ -33,10 +33,12 @@ class VisionAgent(BaseAgent):
                 "text_extraction_from_images",
                 "visual_question_answering",
                 "image_comparison"
-            ],
-            model_provider="openai",
-            model_name="gpt-4-vision-preview"
+            ]
         )
+        
+        # Set agent metadata
+        self.model_provider = "openai"
+        self.model_name = "gpt-4-vision-preview"
         self.model_manager = None
         self.supports_multimodal = True
         self.supports_streaming = False  # Vision models typically don't stream

@@ -28,7 +28,18 @@ except ImportError:
     try:
         from langchain.memory import ConversationBufferWindowMemory
     except ImportError:
-        ConversationBufferWindowMemory = None
+        # Create a simple fallback memory class
+        class ConversationBufferWindowMemory:
+            def __init__(self, k=10, return_messages=True):
+                self.k = k
+                self.return_messages = return_messages
+                self.messages = []
+            
+            def clear(self):
+                self.messages = []
+                
+            def chat_memory(self):
+                return self.messages[-self.k:] if self.messages else []
 from loguru import logger
 
 from src.config.settings import get_settings

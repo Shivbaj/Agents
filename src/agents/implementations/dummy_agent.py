@@ -5,8 +5,11 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 import random
 import asyncio
+import logging
 
-from src.agents.base.agent import BaseAgent
+from src.agents.base.agent import BaseAgent, AgentResponse
+
+logger = logging.getLogger(__name__)
 
 
 class DummyAgent(BaseAgent):
@@ -17,20 +20,27 @@ class DummyAgent(BaseAgent):
     without requiring complex model integrations or external services.
     """
     
-    def __init__(self, agent_id: str = "dummy_agent", **kwargs):
+    def __init__(self, agent_id: str = "dummy_agent", capabilities=None, **kwargs):
+        default_capabilities = [
+            "echo", 
+            "random_facts", 
+            "math_calculations",
+            "greeting",
+            "system_info"
+        ]
+        
         super().__init__(
             agent_id=agent_id,
             name="Dummy Test Agent",
             description="A simple test agent for demonstration and system testing",
-            capabilities=[
-                "echo", 
-                "random_facts", 
-                "math_calculations",
-                "greeting",
-                "system_info"
-            ],
+            agent_type="dummy",
+            capabilities=capabilities or default_capabilities,
             **kwargs
         )
+        
+        # Set agent metadata
+        self.model_provider = "built-in"
+        self.model_name = "dummy_v1.0"
         
         # Dummy agent specific configuration
         self.personality = "friendly"
@@ -56,7 +66,7 @@ class DummyAgent(BaseAgent):
         
     async def _initialize_agent(self):
         """Initialize the dummy agent"""
-        self.logger.info(f"Initializing {self.name}")
+        logger.info(f"Initializing {self.name}")
         
         # Simulate initialization work
         await asyncio.sleep(0.1)
@@ -66,11 +76,11 @@ class DummyAgent(BaseAgent):
         self.total_processing_time = 0.0
         self.initialized_at = datetime.now()
         
-        self.logger.info(f"✓ {self.name} initialized successfully")
+        logger.info(f"✓ {self.name} initialized successfully")
     
-    async def _process_message(self, message: str, session_id: str, context: dict = None) -> dict:
+    async def _process_message(self, message: str, session_id: str, context: Dict[str, Any]) -> AgentResponse:
         """Process message with dummy agent logic"""
-        self.logger.info(f"Dummy agent processing: {message}")
+        logger.info(f"Dummy agent processing: {message}")
         
         # Increment interaction counter
         self.interaction_count += 1
@@ -118,20 +128,20 @@ class DummyAgent(BaseAgent):
         # Simulate some processing delay
         await asyncio.sleep(random.uniform(0.1, 0.5))
         
-        return {
-            "content": response_content,
-            "agent_id": self.agent_id,
-            "session_id": session_id,
-            "metadata": {
+        return AgentResponse(
+            content=response_content,
+            metadata={
                 "processing_time": processing_time,
                 "interaction_number": self.interaction_count,
                 "agent_type": "dummy",
                 "capabilities_used": self._detect_capabilities_used(message_lower),
                 "timestamp": datetime.now().isoformat(),
                 "model_used": "dummy-model-v1.0",
-                "provider": "internal"
+                "provider": "internal",
+                "agent_id": self.id,
+                "session_id": session_id
             }
-        }
+        )
     
     def _handle_math(self, message: str) -> str:
         """Handle basic math operations"""
@@ -167,7 +177,7 @@ class DummyAgent(BaseAgent):
         avg_processing_time = self.total_processing_time / max(self.interaction_count, 1)
         
         return f"""Dummy Agent System Info:
-        • Agent ID: {self.agent_id}
+        • Agent ID: {self.id}
         • Status: Active
         • Interactions: {self.interaction_count}
         • Uptime: {uptime:.1f} seconds
@@ -211,6 +221,6 @@ class DummyAgent(BaseAgent):
     
     async def _cleanup_agent(self):
         """Cleanup dummy agent resources"""
-        self.logger.info(f"Cleaning up {self.name}")
-        self.logger.info(f"Final stats: {self.interaction_count} interactions, "
+        logger.info(f"Cleaning up {self.name}")
+        logger.info(f"Final stats: {self.interaction_count} interactions, "
                         f"{self.total_processing_time:.2f}s total processing time")
