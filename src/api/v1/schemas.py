@@ -180,6 +180,92 @@ class HealthResponse(BaseModel):
         }
 
 
+# MCP-related schemas
+class MCPToolInfo(BaseModel):
+    """MCP tool information schema"""
+    tool_name: str = Field(..., description="Name of the MCP tool")
+    server_id: str = Field(..., description="ID of the server providing this tool")
+    description: str = Field(..., description="Tool description")
+    parameters: Dict[str, Any] = Field(default_factory=dict, description="Tool parameters schema")
+    availability: str = Field(default="available", description="Tool availability status")
+
+
+class MCPToolsResponse(BaseModel):
+    """Response schema for MCP tools listing"""
+    tools: List[MCPToolInfo] = Field(..., description="List of available MCP tools")
+    total: int = Field(..., description="Total number of tools")
+    servers_count: int = Field(..., description="Number of servers providing tools")
+
+
+class MCPServerResponse(BaseModel):
+    """Response schema for MCP server information"""
+    server_id: str = Field(..., description="Unique server identifier")
+    name: str = Field(..., description="Server name")
+    description: str = Field(..., description="Server description")
+    status: str = Field(..., description="Server status")
+    tools_count: int = Field(..., description="Number of tools provided by server")
+    tools: List[str] = Field(default_factory=list, description="List of tool names")
+
+
+class MCPToolExecuteRequest(BaseModel):
+    """Request schema for executing MCP tools"""
+    tool_name: str = Field(..., description="Name of the tool to execute")
+    arguments: Dict[str, Any] = Field(default_factory=dict, description="Tool arguments")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "tool_name": "web_search",
+                "arguments": {
+                    "query": "Python programming tutorials",
+                    "max_results": 5
+                }
+            }
+        }
+
+
+class MCPToolExecuteResponse(BaseModel):
+    """Response schema for MCP tool execution"""
+    tool_name: str = Field(..., description="Name of the executed tool")
+    success: bool = Field(..., description="Whether execution was successful")
+    result: Optional[Any] = Field(default=None, description="Tool execution result")
+    error: Optional[str] = Field(default=None, description="Error message if failed")
+    execution_time: Optional[float] = Field(default=None, description="Execution time in seconds")
+    metadata: Optional[Dict[str, Any]] = Field(default=None, description="Execution metadata")
+
+
+# Agent Registry Enhancement schemas
+class AgentStatsResponse(BaseModel):
+    """Response schema for agent statistics"""
+    total_agents: int = Field(..., description="Total number of registered agents")
+    active_agents: int = Field(..., description="Number of active agents")
+    agent_types: Dict[str, int] = Field(..., description="Count by agent type")
+    model_providers: Dict[str, int] = Field(..., description="Count by model provider")
+    capabilities_stats: Dict[str, int] = Field(..., description="Capabilities distribution")
+
+
+class AgentCardResponse(BaseModel):
+    """Response schema for detailed agent card information"""
+    agent_info: AgentInfo = Field(..., description="Basic agent information")
+    performance_metrics: Dict[str, Any] = Field(..., description="Performance metrics")
+    usage_statistics: Dict[str, Any] = Field(..., description="Usage statistics")
+    configuration: Dict[str, Any] = Field(..., description="Agent configuration")
+    health_status: str = Field(..., description="Current health status")
+    last_interaction: Optional[datetime] = Field(default=None, description="Last interaction timestamp")
+
+
+class CreateAgentRequest(BaseModel):
+    """Request schema for creating a new agent"""
+    agent_id: str = Field(..., description="Unique agent identifier")
+    name: str = Field(..., description="Agent name")
+    description: str = Field(..., description="Agent description")
+    agent_type: str = Field(default="general", description="Agent type")
+    model_provider: str = Field(default="ollama", description="Model provider")
+    model_name: str = Field(default="phi3:mini", description="Model name")
+    capabilities: List[str] = Field(default_factory=list, description="Agent capabilities")
+    config: Optional[Dict[str, Any]] = Field(default=None, description="Additional configuration")
+
+
 # Error schemas
 class ErrorResponse(BaseModel):
     """Error response schema"""

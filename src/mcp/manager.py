@@ -275,8 +275,117 @@ class MCPManager:
         
         return health_status
     
+    async def get_servers_info(self) -> Dict[str, Dict[str, Any]]:
+        """Get information about all registered servers"""
+        servers_info = {}
+        
+        for server_name, server in self.servers.items():
+            try:
+                tools = await server.get_tools() if hasattr(server, 'get_tools') else server.tools
+                servers_info[server_name] = {
+                    "server_id": server_name,
+                    "name": getattr(server, 'name', server_name),
+                    "description": getattr(server, 'description', ''),
+                    "status": "active" if server.is_initialized else "inactive",
+                    "tools": tools,
+                    "last_health_check": datetime.now().isoformat()
+                }
+            except Exception as e:
+                servers_info[server_name] = {
+                    "server_id": server_name,
+                    "name": server_name,
+                    "description": "",
+                    "status": "error",
+                    "tools": {},
+                    "error": str(e)
+                }
+        
+        return servers_info
+    
+    async def get_server_tools(self, server_id: str) -> Dict[str, Any]:
+        """Get tools for a specific server"""
+        if server_id not in self.servers:
+            raise ValueError(f"Server '{server_id}' not found")
+        
+        server = self.servers[server_id]
+        if hasattr(server, 'get_tools'):
+            return await server.get_tools()
+        else:
+            return server.tools
+    
+    async def get_tool_server(self, tool_name: str) -> Optional[str]:
+        """Get the server ID that provides a specific tool"""
+        return self.tool_registry.get(tool_name)
+
+    async def list_tools(self) -> Dict[str, Dict[str, Any]]:
+        """List all available tools across all servers"""
+        all_tools = {}
+        
+        for server_id, server in self.servers.items():
+            try:
+                # Get tools from server
+                if hasattr(server, 'get_tools'):
+                    tools = await server.get_tools()
+                else:
+                    tools = getattr(server, 'tools', {})
+                
+                # Add server info to each tool
+                for tool_name, tool_info in tools.items():
+                    if isinstance(tool_info, dict):
+                        all_tools[tool_name] = {
+                            **tool_info,
+                            "server_id": server_id,
+                            "status": "available"
+                        }
+                    else:
+                        # Handle case where tool_info is not a dict
+                        all_tools[tool_name] = {
+                            "description": getattr(tool_info, 'description', f'Tool from {server_id}'),
+                            "server_id": server_id,
+                            "status": "available",
+                            "parameters": getattr(tool_info, 'parameters_schema', {})
+                        }
+            except Exception as e:
+                # Add error info for tools from failed servers
+                print(f"Error getting tools from server {server_id}: {e}")
+        
+        return all_tools
+
+    async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a tool by name with given arguments"""
+        # Find which server provides this tool
+        server_id = self.tool_registry.get(tool_name)
+        if not server_id:
+            raise ValueError(f"Tool '{tool_name}' not found in any registered server")
+        
+        # Get the server
+        server = self.servers.get(server_id)
+        if not server:
+            raise ValueError(f"Server '{server_id}' not found")
+        
+        # Call the tool on the server
+        try:
+            if hasattr(server, 'call_tool'):
+                result = await server.call_tool(tool_name, arguments)
+            else:
+                # Fallback: try to get tool directly and execute
+                tools = await server.get_tools() if hasattr(server, 'get_tools') else getattr(server, 'tools', {})
+                if tool_name not in tools:
+                    raise ValueError(f"Tool '{tool_name}' not found in server '{server_id}'")
+                
+                tool = tools[tool_name]
+                if hasattr(tool, 'execute'):
+                    result = await tool.execute(arguments)
+                else:
+                    raise ValueError(f"Tool '{tool_name}' does not have execute method")
+            
+            return result
+            
+        except Exception as e:
+            raise RuntimeError(f"Error executing tool '{tool_name}': {str(e)}")
+
     async def cleanup(self):
-        """Cleanup all servers and resources"""
+        """Cleanup all resources"""
         print("Cleaning up MCP Manager...")
         
         # Cleanup all servers
