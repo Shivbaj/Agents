@@ -83,12 +83,12 @@ curl http://localhost:8000/health
 # List available agents
 curl http://localhost:8000/api/v1/agents/
 
-# Chat with general assistant using Ollama
+# Chat with dummy agent for testing
 curl -X POST "http://localhost:8000/api/v1/agents/chat" \
   -H "Content-Type: application/json" \
   -d '{
-    "message": "Hello! What can you help me with?",
-    "agent_id": "general_assistant",
+    "message": "Hello! Can you tell me a random fact?",
+    "agent_id": "dummy_agent",
     "session_id": "test_session"
   }'
 ```
@@ -167,7 +167,7 @@ multi-agent-system/
 │   │   │   └── agent.py      #   └── BaseAgent abstract class
 │   │   ├── implementations/   #   └── Concrete agent implementations
 │   │   │   ├── general_assistant_enhanced.py  # General purpose agent
-│   │   │   ├── summarizer_agent.py            # Text summarization agent  
+│   │   │   ├── summarizer_agent.py            # Text summarization   agent  
 │   │   │   └── vision_agent.py                # Multimodal vision agent
 │   │   └── registry/          #   └── Agent discovery & management
 │   │       └── manager.py    #   └── AgentManager for registration
@@ -175,8 +175,9 @@ multi-agent-system/
 │   ├── api/                   # 🌐 FastAPI routes & endpoints
 │   │   ├── routes.py         #   └── Main router setup
 │   │   └── v1/               #   └── API version 1
-│   │       ├── agents.py     #   └── Agent interaction endpoints
+│   │       ├── agent_routes.py #   └── Agent interaction endpoints
 │   │       ├── health.py     #   └── Health check endpoints
+│   │       ├── mcp.py        #   └── MCP integration endpoints
 │   │       ├── models.py     #   └── Model management endpoints
 │   │       └── schemas.py    #   └── Pydantic data models
 │   │
@@ -198,12 +199,8 @@ multi-agent-system/
 │   │   └── servers/          #   └── MCP server implementations
 │   │       └── web_search.py #   └── Web search MCP server
 │   │
-│   ├── models/                # 🤖 LLM model providers
-│   │   └── providers/        #   └── Provider implementations
-│   │       ├── base_provider.py      # Abstract provider class
-│   │       ├── ollama_provider.py    # Local Ollama integration
-│   │       ├── openai_provider.py    # OpenAI API integration
-│   │       └── anthropic_provider.py # Anthropic API integration
+│   ├── services/              # 🔧 Business logic services
+│   │   └── model_manager.py  #   └── Model lifecycle & provider management
 │   │
 │   ├── observability/         # 📊 Monitoring & observability
 │   │   └── langsmith.py      #   └── LangSmith integration (optional)
@@ -218,9 +215,6 @@ multi-agent-system/
 │   │       ├── summarizer_agent.json     # Summarizer prompts  
 │   │       └── vision_agent.json         # Vision agent prompts
 │   │
-│   ├── services/              # 🔧 Business logic services
-│   │   └── model_manager.py  #   └── Model lifecycle & provider management
-│   │
 │   ├── tools/                 # 🛠️ Agent tools & utilities
 │   │   └── base_tools.py     #   └── Core tool implementations
 │   │
@@ -231,10 +225,15 @@ multi-agent-system/
 │
 ├── tests/                     # 🧪 Test suite
 │   └── test_agent_registry.py  # Agent registry tests
-├── scripts/                   # � Development scripts  
+├── scripts/                   # 🔧 Development scripts  
 │   └── dev_setup.py          #   └── Development environment setup
-├── data/cache/               # � Cache directory
-├── logs/                     # 📋 Application logs
+├── docker/                   # 🐳 Docker configuration files
+│   └── prometheus.yml        #   └── Prometheus monitoring config
+├── data/                     # 📁 Data directory (created at runtime)
+│   ├── cache/               #   └── Cache files
+│   ├── uploads/             #   └── File uploads
+│   └── models/              #   └── Model storage
+├── logs/                     # 📋 Application logs (created at runtime)
 ├── docker-compose.yml        # � Docker orchestration
 ├── Dockerfile               # � Application container definition
 ├── pyproject.toml           # 📦 Project configuration & dependencies
@@ -254,6 +253,7 @@ Agents are the core components that process messages and perform tasks. All agen
 - **GeneralAssistant**: Enhanced general purpose agent with tool integration
 - **SummarizerAgent**: Specialized for content summarization and analysis  
 - **VisionAgent**: Multimodal agent for processing images and visual content
+- **DummyAgent**: Simple test agent for demonstration and system validation
 
 ```python
 from src.agents.registry.manager import AgentManager
@@ -264,10 +264,10 @@ await agent_manager.initialize()
 
 # List available agents
 agents = agent_manager.list_agents()
-print(agents)  # ['general_assistant', 'summarizer_agent', 'vision_agent']
+print(f"Found {len(agents)} agents")  # Found 4 agents
 
 # Get a specific agent
-agent = await agent_manager.get_agent("general_assistant")
+agent = agent_manager.get_agent("dummy_agent")
 
 # Process messages
 response = await agent.process_message(
@@ -345,27 +345,29 @@ result = await mcp_manager.call_tool("web_search", {
 })
 ```
 
-### 🤖 **Model Providers**
+### 🤖 **Model Management**
 
-Unified interface for multiple LLM providers:
+Unified model management through the ModelManager service:
 
 ```python
-from src.models.providers.ollama_provider import OllamaProvider
-from src.models.providers.openai_provider import OpenAIProvider
+from src.services.model_manager import ModelManager
 
-# Use Ollama for local inference
-ollama = OllamaProvider(base_url="http://localhost:11434")
-models = await ollama.list_models()
-response = await ollama.generate_text(
+# Get the model manager
+model_manager = ModelManager()
+await model_manager.initialize()
+
+# List available models from all providers
+models = await model_manager.list_models()
+
+# Get models from specific provider
+ollama_models = await model_manager.list_models(provider="ollama")
+openai_models = await model_manager.list_models(provider="openai")
+
+# Generate text using a model
+response = await model_manager.generate_text(
+    provider="ollama",
     model_name="phi3:mini",
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-
-# Use OpenAI (if API key configured)
-openai = OpenAIProvider(api_key="your-key")
-response = await openai.generate_text(
-    model_name="gpt-3.5-turbo", 
-    messages=[{"role": "user", "content": "Hello!"}]
+    prompt="Hello! How can I help you?"
 )
 ```
 
@@ -398,9 +400,17 @@ curl http://localhost:8000/api/v1/models/config
 GET /api/v1/agents/list
 curl http://localhost:8000/api/v1/agents/list
 
+# Get agent statistics
+GET /api/v1/agents/stats
+curl http://localhost:8000/api/v1/agents/stats
+
 # Get specific agent details
 GET /api/v1/agents/{agent_id}
-curl http://localhost:8000/api/v1/agents/general_assistant
+curl http://localhost:8000/api/v1/agents/dummy_agent
+
+# Get agent card with detailed info
+GET /api/v1/agents/{agent_id}/card
+curl http://localhost:8000/api/v1/agents/dummy_agent/card
 
 # Discover agents by query
 GET /api/v1/agents/discover?query={query}&limit={limit}
@@ -440,25 +450,53 @@ curl -X POST "http://localhost:8000/api/v1/agents/multimodal" \
   -F "session_id=session_123"
 ```
 
-### 🔧 **Model Management Endpoints**
+### � **MCP Integration Endpoints**
+
+```bash
+# List MCP servers
+GET /api/v1/mcp/servers
+curl http://localhost:8000/api/v1/mcp/servers
+
+# List available MCP tools
+GET /api/v1/mcp/tools
+curl http://localhost:8000/api/v1/mcp/tools
+
+# Execute MCP tool
+POST /api/v1/mcp/tools/execute
+curl -X POST "http://localhost:8000/api/v1/mcp/tools/execute" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tool_name": "web_search",
+    "arguments": {
+      "query": "Python tutorials",
+      "max_results": 5
+    }
+  }'
+
+# Check MCP system health
+GET /api/v1/mcp/health
+curl http://localhost:8000/api/v1/mcp/health
+```
+
+### �🔧 **Model Management Endpoints**
 
 ```bash
 # List available models
-GET /api/v1/models/available
-curl http://localhost:8000/api/v1/models/available
+GET /api/v1/models/list
+curl http://localhost:8000/api/v1/models/list
 
-# Get model details
-GET /api/v1/models/{provider}/{model_name}
-curl http://localhost:8000/api/v1/models/ollama/phi3:mini
+# List model providers
+GET /api/v1/models/providers
+curl http://localhost:8000/api/v1/models/providers
 
 # Test model generation
-POST /api/v1/models/generate
-curl -X POST "http://localhost:8000/api/v1/models/generate" \
+POST /api/v1/models/test
+curl -X POST "http://localhost:8000/api/v1/models/test" \
   -H "Content-Type: application/json" \
   -d '{
     "provider": "ollama",
     "model": "phi3:mini",
-    "messages": [{"role": "user", "content": "Hello!"}]
+    "prompt": "Hello! How can I help you?"
   }'
 ```
 
@@ -608,71 +646,55 @@ custom_server = CustomMCPServer()
 await mcp_manager.register_server(custom_server)
 ```
 
-### 🌐 **Adding a Custom Model Provider**
+### 🌐 **Extending Model Support**
+
+To add support for new LLM providers, extend the ModelManager service:
 
 ```python
-from src.models.providers.base_provider import BaseProvider
+from src.services.model_manager import ModelManager
 
-class CustomProvider(BaseProvider):
-    def __init__(self, api_key: str, base_url: str):
-        super().__init__("custom_provider")
-        self.api_key = api_key
-        self.base_url = base_url
-        self.client = None
+class EnhancedModelManager(ModelManager):
+    def __init__(self):
+        super().__init__()
+        # Add custom provider initialization
+        self.custom_providers = {}
     
-    async def generate_text(self, model_name: str, messages: list, **kwargs) -> str:
-        """Generate text using custom API"""
-        # Implement your custom API call
-        response = await self._make_api_call(model_name, messages, **kwargs)
-        return response.get("text", "")
+    async def add_custom_provider(self, provider_name: str, provider_config: dict):
+        """Add a custom model provider"""
+        # Implement custom provider logic
+        self.custom_providers[provider_name] = provider_config
     
-    async def generate_stream(self, model_name: str, messages: list, **kwargs):
-        """Generate streaming text"""
-        # Implement streaming response
-        async for chunk in self._stream_api_call(model_name, messages, **kwargs):
-            yield chunk
-    
-    async def list_models(self) -> list:
-        """List available models"""
-        # Return list of available models
-        return ["custom-model-1", "custom-model-2"]
-    
-    async def _make_api_call(self, model_name: str, messages: list, **kwargs):
-        """Make API call to your service"""
-        # Implement actual API integration
-        pass
-        return f"Processed: {input_data}"
-
-# Register the tool
-from src.tools.base_tools import AVAILABLE_TOOLS
-AVAILABLE_TOOLS["my_tool"] = MyCustomTool
+    async def generate_custom_text(self, provider: str, model: str, prompt: str):
+        """Generate text using custom provider"""
+        if provider in self.custom_providers:
+            # Implement custom generation logic
+            pass
+        return await super().generate_text(provider, model, prompt)
+```
 ```
 
-### 🤖 **Adding a New Model Provider**
+### 🛠️ **Adding Custom Tools**
+
+Extend the base tools functionality:
 
 ```python
-from src.models.providers.base_provider import EnhancedBaseProvider
+from src.tools.base_tools import BaseTool
 
-class MyModelProvider(EnhancedBaseProvider):
-    def __init__(self, api_key: str, **kwargs):
-        config = ProviderConfig(
-            provider_name="my_provider",
-            api_key=api_key,
-            **kwargs
+class MyCustomTool(BaseTool):
+    def __init__(self):
+        super().__init__(
+            name="my_custom_tool",
+            description="A custom tool for specific tasks"
         )
-        super().__init__(config)
     
-    async def _initialize_provider(self):
-        # Initialize connection to your model API
-        pass
-    
-    def create_llm(self, model_name: str, **kwargs):
-        # Create LangChain-compatible LLM instance
-        pass
-    
-    async def list_models(self):
-        # Return available models
-        pass
+    async def execute(self, **kwargs):
+        """Execute the custom tool"""
+        # Implement your tool logic
+        return {"result": "Custom tool executed successfully"}
+
+# Register the tool
+from src.tools.base_tools import get_tool, register_tool
+register_tool("my_tool", MyCustomTool)
 ```
 
 ### 📝 **Creating Custom Prompt Templates**
