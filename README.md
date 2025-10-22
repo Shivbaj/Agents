@@ -1,50 +1,49 @@
 # 🤖 Multi-Agent System
 
-A **clean, modular, and extensible** multi-agent system built with **FastAPI**, **LangChain**, **LangGraph**, and **Model Context Protocol (MCP)**. This system allows you to easily plug in new tools, servers, models, and APIs while maintaining a clean, object-oriented architecture.
+A **clean, modular, and extensible** multi-agent system built with **FastAPI**, **Model Context Protocol (MCP)**, and **multiple LLM providers**. This system provides a flexible framework for AI agents with tool integration, conversation memory, and comprehensive observability.
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
-[![LangChain](https://img.shields.io/badge/LangChain-0.1+-purple.svg)](https://python.langchain.com/)
+[![MCP](https://img.shields.io/badge/MCP-Enabled-purple.svg)](https://modelcontextprotocol.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## ✨ Features
 
 ### 🏗️ **Modular Architecture**
 - **Object-oriented design** with clean interfaces
-- **Plugin-based system** for easy extensibility
+- **Plugin-based agent system** for easy extensibility
 - **Base agent classes** for rapid development
-- **Comprehensive error handling** and logging
+- **Comprehensive error handling** and logging with Loguru
 
-### 🧠 **LangChain & LangGraph Integration**
-- **Unified LLM interfaces** across providers
-- **Advanced memory management** (conversation + vector storage)
-- **Multi-agent workflows** with LangGraph
-- **Prompt template system** with versioning
+### 🔌 **Model Context Protocol (MCP) Integration**
+- **Extensible tool system** via MCP servers
+- **Web search capabilities** with built-in server
+- **Dynamic server registration** and management
+- **Tool composition** for complex workflows
 
-### 🛠️ **Tool Ecosystem**
-- **Web search capabilities** (DuckDuckGo, Google)
-- **File processing** (PDF, DOCX, TXT, images)
-- **Safe code execution** (sandboxed Python)
-- **Mathematical calculations**
-- **Custom tool creation** framework
+### 🤖 **Multi-Agent Framework**
+- **General Assistant Agent** with enhanced capabilities
+- **Summarizer Agent** for content processing
+- **Vision Agent** for multimodal interactions
+- **Agent Registry** for dynamic discovery and management
 
-### 🌐 **Model Provider Support**
-- **OpenAI** (GPT-4, GPT-3.5, DALL-E, Whisper)
-- **Anthropic** (Claude 3)
-- **Ollama** (Local models)
-- **Easy provider extension**
+### 🌐 **Multiple LLM Provider Support**
+- **OpenAI** (GPT-4, GPT-3.5-turbo, and more)
+- **Anthropic** (Claude 3 family)
+- **Ollama** (Local models - phi3:mini, llama2, etc.)
+- **Easy provider extension** with unified interface
 
-### 🧮 **Advanced Memory**
-- **Conversation buffer management**
-- **Vector-based semantic search**
-- **Persistent storage options**
-- **Context-aware retrieval**
+### 🧮 **Advanced Memory & State**
+- **Conversation memory** with Redis backend
+- **Session management** across interactions
+- **Persistent conversation history**
+- **Configurable memory retention**
 
-### 🔄 **Workflow Orchestration**
-- **Multi-agent coordination** with LangGraph
-- **Conditional routing** and decision making
-- **Parallel execution** capabilities
-- **Error recovery** and retry logic
+### 🔄 **Workflow & Orchestration**
+- **Async/await based** execution
+- **FastAPI integration** with automatic API documentation
+- **Health monitoring** for all services
+- **Docker containerization** for easy deployment
 
 ---
 
@@ -52,11 +51,11 @@ A **clean, modular, and extensible** multi-agent system built with **FastAPI**, 
 
 ### Prerequisites
 
-- **Python 3.10+**
-- **OpenAI API Key** (recommended)
-- **Docker & Docker Compose** (optional)
+- **Python 3.10+** 
+- **Docker & Docker Compose** (recommended for full deployment)
+- **Optional**: LLM Provider API Keys (OpenAI, Anthropic)
 
-### Installation
+### 🐳 Docker Deployment (Recommended)
 
 1. **Clone the repository**
 ```bash
@@ -64,69 +63,96 @@ git clone <repository-url>
 cd multi-agent-system
 ```
 
-2. **Install dependencies**
+2. **Start all services with Docker Compose**
 ```bash
-# Using pip
-pip install -e .
+# Start all services (FastAPI app, Redis, Ollama with phi3:mini)
+docker-compose up -d
 
-# Or using uv (recommended)
-pip install uv
-uv sync
+# View logs
+docker-compose logs -f app
+
+# Check service health
+docker-compose ps
 ```
 
-3. **Set up environment variables**
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
-
-**Example .env file:**
-```bash
-# API Keys
-OPENAI_API_KEY=your_openai_api_key_here
-ANTHROPIC_API_KEY=your_anthropic_key_here
-
-# Optional: Local model settings
-OLLAMA_BASE_URL=http://localhost:11434
-
-# Optional: Web search
-GOOGLE_SEARCH_API_KEY=your_google_api_key
-GOOGLE_SEARCH_ENGINE_ID=your_search_engine_id
-
-# Database
-DATABASE_URL=sqlite:///./data/agents.db
-
-# Logging
-LOG_LEVEL=INFO
-```
-
-4. **Run the quick start example**
-```bash
-python -m tests.examples.quickstart
-```
-
-5. **Start the FastAPI server**
-```bash
-# Development
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
-
-# Production
-python -m src.main
-```
-
-6. **Test the API**
+3. **Test the deployment**
 ```bash
 # Health check
 curl http://localhost:8000/health
 
-# Chat with an agent
+# List available agents
+curl http://localhost:8000/api/v1/agents/
+
+# Chat with general assistant using Ollama
 curl -X POST "http://localhost:8000/api/v1/agents/chat" \
   -H "Content-Type: application/json" \
   -d '{
-    "message": "Hello! Can you help me calculate 25 * 17?",
+    "message": "Hello! What can you help me with?",
     "agent_id": "general_assistant",
     "session_id": "test_session"
   }'
+```
+
+### 🔧 Manual Installation
+
+1. **Install dependencies using uv (recommended)**
+```bash
+# Install uv package manager
+pip install uv
+
+# Install project dependencies
+uv sync
+```
+
+2. **Set up environment variables**
+```bash
+# Copy example environment file
+cp .env.example .env
+
+# Edit with your configuration
+nano .env
+```
+
+**Example .env file:**
+```bash
+# LLM Provider API Keys (optional - Ollama works without them)
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_key_here
+
+# Ollama settings (for local models)
+OLLAMA_BASE_URL=http://localhost:11434
+
+# Redis settings
+REDIS_URL=redis://localhost:6379
+
+# API Configuration
+API_TITLE=Multi-Agent System
+API_VERSION=1.0.0
+LOG_LEVEL=INFO
+DEBUG=false
+
+# CORS settings
+CORS_ORIGINS=["http://localhost:3000","http://localhost:8080"]
+```
+
+3. **Start Redis and Ollama (if running manually)**
+```bash
+# Start Redis
+redis-server
+
+# Install and start Ollama with phi3:mini model
+curl -fsSL https://ollama.ai/install.sh | sh
+ollama serve &
+ollama pull phi3:mini
+```
+
+4. **Run the FastAPI server**
+```bash
+# Development mode with auto-reload
+uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+# Production mode
+python -m src.main
 ```
 
 ---
@@ -137,61 +163,83 @@ curl -X POST "http://localhost:8000/api/v1/agents/chat" \
 multi-agent-system/
 ├── src/
 │   ├── agents/                 # 🤖 Agent implementations
-│   │   ├── base/              #   └── Base agent classes
+│   │   ├── base/              #   └── Base agent classes & interfaces
+│   │   │   └── agent.py      #   └── BaseAgent abstract class
 │   │   ├── implementations/   #   └── Concrete agent implementations
-│   │   ├── registry/          #   └── Agent discovery & management
-│   │   └── specialized/       #   └── Domain-specific agents
+│   │   │   ├── general_assistant_enhanced.py  # General purpose agent
+│   │   │   ├── summarizer_agent.py            # Text summarization agent  
+│   │   │   └── vision_agent.py                # Multimodal vision agent
+│   │   └── registry/          #   └── Agent discovery & management
+│   │       └── manager.py    #   └── AgentManager for registration
 │   │
 │   ├── api/                   # 🌐 FastAPI routes & endpoints
+│   │   ├── routes.py         #   └── Main router setup
 │   │   └── v1/               #   └── API version 1
+│   │       ├── agents.py     #   └── Agent interaction endpoints
+│   │       ├── health.py     #   └── Health check endpoints
+│   │       ├── models.py     #   └── Model management endpoints
+│   │       └── schemas.py    #   └── Pydantic data models
 │   │
 │   ├── config/                # ⚙️ Configuration management
-│   │   └── settings.py       #   └── Pydantic settings
+│   │   └── settings.py       #   └── Pydantic settings with env vars
 │   │
 │   ├── core/                  # 🏛️ Core system components
-│   │   ├── exceptions.py     #   └── Exception handling
-│   │   ├── logging.py        #   └── Logging setup
+│   │   ├── exceptions.py     #   └── Custom exception classes
+│   │   ├── logging.py        #   └── Loguru logging setup
 │   │   └── middleware.py     #   └── FastAPI middleware
 │   │
-
+│   ├── memory/                # 🧠 Memory & conversation management
+│   │   └── conversation.py   #   └── Redis-backed conversation storage
 │   │
-│   ├── memory/                # 🧠 Memory management
-│   │   └── conversation.py   #   └── Conversation & vector memory
-│   │
-│   ├── mcp/                   # 🔌 Model Context Protocol
+│   ├── mcp/                   # 🔌 Model Context Protocol integration
 │   │   ├── base/             #   └── MCP base classes
-│   │   ├── servers/          #   └── MCP server implementations
-│   │   └── tools/            #   └── MCP tools
+│   │   │   └── tool.py      #   └── BaseMCPTool class
+│   │   ├── manager.py        #   └── MCP server lifecycle management
+│   │   └── servers/          #   └── MCP server implementations
+│   │       └── web_search.py #   └── Web search MCP server
 │   │
 │   ├── models/                # 🤖 LLM model providers
 │   │   └── providers/        #   └── Provider implementations
+│   │       ├── base_provider.py      # Abstract provider class
+│   │       ├── ollama_provider.py    # Local Ollama integration
+│   │       ├── openai_provider.py    # OpenAI API integration
+│   │       └── anthropic_provider.py # Anthropic API integration
 │   │
 │   ├── observability/         # 📊 Monitoring & observability
-│   │   └── langsmith.py      #   └── LangSmith integration
+│   │   └── langsmith.py      #   └── LangSmith integration (optional)
 │   │
-│   ├── orchestrator/          # 🎭 Multi-agent workflows
-│   │   └── workflow.py       #   └── LangGraph workflows
+│   ├── orchestrator/          # 🎭 Workflow orchestration
+│   │   └── workflow.py       #   └── Multi-agent workflow management
 │   │
-│   ├── prompts/               # 📝 Prompt management
-│   │   ├── manager.py        #   └── Template manager
-│   │   └── templates/        #   └── Prompt templates (JSON)
+│   ├── prompts/               # 📝 Prompt template management
+│   │   ├── manager.py        #   └── Template manager & loader
+│   │   └── templates/        #   └── JSON prompt templates
+│   │       ├── general_assistant.json    # General assistant prompts
+│   │       ├── summarizer_agent.json     # Summarizer prompts  
+│   │       └── vision_agent.json         # Vision agent prompts
 │   │
 │   ├── services/              # 🔧 Business logic services
-│   │   └── model_manager.py  #   └── Model lifecycle management
+│   │   └── model_manager.py  #   └── Model lifecycle & provider management
 │   │
 │   ├── tools/                 # 🛠️ Agent tools & utilities
 │   │   └── base_tools.py     #   └── Core tool implementations
 │   │
-│   └── utils/                 # 🔨 Utility functions
-│       └── file_utils.py     #   └── File operations
+│   ├── utils/                 # 🔨 Utility functions
+│   │   └── file_utils.py     #   └── File operations & helpers
+│   │
+│   └── main.py               # 🚀 FastAPI application entry point
 │
 ├── tests/                     # 🧪 Test suite
-│   └── examples/             # 📚 Usage examples & demos
-├── docker/                    # 🐳 Docker configurations
-├── docs/                      # 📖 Documentation
-├── .env.example              # 📄 Environment template
-├── pyproject.toml            # 📦 Project configuration
-└── README.md                 # 📋 This file
+│   └── test_agent_registry.py  # Agent registry tests
+├── scripts/                   # � Development scripts  
+│   └── dev_setup.py          #   └── Development environment setup
+├── data/cache/               # � Cache directory
+├── logs/                     # 📋 Application logs
+├── docker-compose.yml        # � Docker orchestration
+├── Dockerfile               # � Application container definition
+├── pyproject.toml           # 📦 Project configuration & dependencies
+├── requirements.txt         # 📦 Python dependencies (fallback)
+└── README.md               # 📋 This documentation
 ```
 
 ---
@@ -202,154 +250,397 @@ multi-agent-system/
 
 Agents are the core components that process messages and perform tasks. All agents inherit from `BaseAgent`:
 
+**Available Agents:**
+- **GeneralAssistant**: Enhanced general purpose agent with tool integration
+- **SummarizerAgent**: Specialized for content summarization and analysis  
+- **VisionAgent**: Multimodal agent for processing images and visual content
+
 ```python
-from src.agents.base.agent import BaseAgent
-from src.agents.implementations.general_assistant_enhanced import GeneralAssistant
+from src.agents.registry.manager import AgentManager
 
-# Create an agent
-agent = GeneralAssistant(
-    agent_id="my_assistant",
-    use_tools=True,
-    use_web_search=True
-)
+# Get the agent manager
+agent_manager = AgentManager()
+await agent_manager.initialize()
 
-await agent.initialize()
+# List available agents
+agents = agent_manager.list_agents()
+print(agents)  # ['general_assistant', 'summarizer_agent', 'vision_agent']
+
+# Get a specific agent
+agent = await agent_manager.get_agent("general_assistant")
 
 # Process messages
 response = await agent.process_message(
-    message="What's the weather like?",
-    session_id="user_123"
+    message="What can you help me with?",
+    session_id="user_123",
+    context={}
 )
 ```
 
 ### 🧠 **Memory System**
 
-The memory system provides conversation context and semantic search:
+Redis-backed conversation memory with session management:
 
 ```python
-from src.memory.conversation import MemoryManager
+from src.memory.conversation import ConversationMemory
 
-# Create memory manager
-memory_manager = MemoryManager()
+# Create conversation memory for a session
+memory = ConversationMemory("session_123")
 
-# Conversation memory
-conv_memory = memory_manager.create_conversation_memory("session_123")
-await conv_memory.add_message("user", "I like Python programming")
+# Add messages to conversation history
+await memory.add_message("user", "Tell me about Python")
+await memory.add_message("assistant", "Python is a programming language...")
 
-# Hybrid memory (conversation + vector search)
-hybrid_memory = memory_manager.create_hybrid_memory("session_456")
-relevant_context = await hybrid_memory.search_relevant_context("programming")
+# Get conversation history
+history = await memory.get_messages(limit=10)
+
+# Clear session memory
+await memory.clear()
 ```
 
 ### 📝 **Prompt Templates**
 
-Manage and version your prompts with the template system:
+JSON-based prompt template system with dynamic loading:
 
 ```python
-from src.prompts.manager import PromptManager, create_agent_prompt
+from src.prompts.manager import PromptManager
 
-# Create prompt manager
+# Load prompt templates
 prompt_manager = PromptManager()
+await prompt_manager.load_templates()
 
-# Create custom template
-custom_prompt = create_agent_prompt(
-    agent_name="Code Helper",
-    task_description="Help with programming questions",
-    personality_traits=["helpful", "technical", "patient"]
+# Get system prompts for agents
+general_prompt = prompt_manager.get_template("general_assistant")
+summarizer_prompt = prompt_manager.get_template("summarizer_agent")
+
+# Templates include:
+# - system_prompt: Core agent instructions
+# - task_definitions: Specific task descriptions  
+# - response_formats: Expected output formats
+```
+
+### � **MCP Integration**
+
+Model Context Protocol servers provide extensible tool functionality:
+
+```python
+from src.mcp.manager import get_mcp_manager
+from src.mcp.servers.web_search import WebSearchServer
+
+# Get MCP manager
+mcp_manager = get_mcp_manager()
+await mcp_manager.initialize()
+
+# Register a new server
+web_server = WebSearchServer()
+await mcp_manager.register_server(web_server)
+
+# List available tools from all servers
+tools = await mcp_manager.list_tools()
+
+# Execute a tool
+result = await mcp_manager.call_tool("web_search", {
+    "query": "Python tutorials",
+    "max_results": 5
+})
+```
+
+### 🤖 **Model Providers**
+
+Unified interface for multiple LLM providers:
+
+```python
+from src.models.providers.ollama_provider import OllamaProvider
+from src.models.providers.openai_provider import OpenAIProvider
+
+# Use Ollama for local inference
+ollama = OllamaProvider(base_url="http://localhost:11434")
+models = await ollama.list_models()
+response = await ollama.generate_text(
+    model_name="phi3:mini",
+    messages=[{"role": "user", "content": "Hello!"}]
 )
 
-# Register and use
-prompt_manager.register_template("code_helper", custom_prompt)
-formatted_prompt = await prompt_manager.get_prompt("code_helper", {
-    "user_input": "How do I create a Python class?"
-})
-```
-
-### 🛠️ **Tools**
-
-Tools extend agent capabilities:
-
-```python
-from src.tools.base_tools import get_tool
-
-# Get a tool
-calc_tool = get_tool("calculator")
-result = await calc_tool._arun("(15 + 25) * 2")
-
-# Web search
-search_tool = get_tool("web_search")
-results = await search_tool._arun("Python tutorials")
-
-# File processing
-file_tool = get_tool("file_processor")
-content = await file_tool._arun("/path/to/document.pdf")
-```
-
-### 🔄 **Workflows**
-
-Create complex multi-agent workflows with LangGraph:
-
-```python
-from src.orchestrator.workflow import WorkflowBuilder
-
-# Create workflow
-builder = WorkflowBuilder()
-workflow = builder.create_research_workflow()
-
-# Execute
-result = await workflow.execute({
-    "query": "Research AI developments in 2024"
-})
+# Use OpenAI (if API key configured)
+openai = OpenAIProvider(api_key="your-key")
+response = await openai.generate_text(
+    model_name="gpt-3.5-turbo", 
+    messages=[{"role": "user", "content": "Hello!"}]
+)
 ```
 
 ---
 
-## 🏗️ Extending the System
+## � API Documentation
+
+The system exposes a comprehensive REST API for agent interaction. Once running, visit `http://localhost:8000/docs` for interactive API documentation.
+
+### 📋 **Health & System Endpoints**
+
+```bash
+# System health check
+GET /health
+curl http://localhost:8000/health
+
+# API information  
+GET /
+curl http://localhost:8000/
+
+# Get system configuration
+GET /api/v1/models/config
+curl http://localhost:8000/api/v1/models/config
+```
+
+### 🤖 **Agent Management Endpoints**
+
+```bash
+# List all available agents
+GET /api/v1/agents/list
+curl http://localhost:8000/api/v1/agents/list
+
+# Get specific agent details
+GET /api/v1/agents/{agent_id}
+curl http://localhost:8000/api/v1/agents/general_assistant
+
+# Discover agents by query
+GET /api/v1/agents/discover?query={query}&limit={limit}
+curl "http://localhost:8000/api/v1/agents/discover?query=summarize%20text&limit=5"
+```
+
+### 💬 **Chat Endpoints**
+
+```bash
+# Chat with an agent
+POST /api/v1/agents/chat
+curl -X POST "http://localhost:8000/api/v1/agents/chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Hello! Can you help me with Python programming?",
+    "agent_id": "general_assistant",
+    "session_id": "my_session_123",
+    "context": {}
+  }'
+
+# Stream chat response  
+POST /api/v1/agents/chat/stream
+curl -X POST "http://localhost:8000/api/v1/agents/chat/stream" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Write a detailed explanation about machine learning",
+    "agent_id": "general_assistant",
+    "stream": true
+  }'
+
+# Multimodal chat (with file upload)
+POST /api/v1/agents/multimodal
+curl -X POST "http://localhost:8000/api/v1/agents/multimodal" \
+  -F "file=@image.jpg" \
+  -F "message=Describe this image" \
+  -F "agent_id=vision_agent" \
+  -F "session_id=session_123"
+```
+
+### 🔧 **Model Management Endpoints**
+
+```bash
+# List available models
+GET /api/v1/models/available
+curl http://localhost:8000/api/v1/models/available
+
+# Get model details
+GET /api/v1/models/{provider}/{model_name}
+curl http://localhost:8000/api/v1/models/ollama/phi3:mini
+
+# Test model generation
+POST /api/v1/models/generate
+curl -X POST "http://localhost:8000/api/v1/models/generate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "provider": "ollama",
+    "model": "phi3:mini",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+### 📊 **Response Formats**
+
+**Agent Chat Response:**
+```json
+{
+  "response": "Hello! I'm here to help you with Python programming...",
+  "agent_id": "general_assistant",
+  "session_id": "my_session_123",
+  "metadata": {
+    "model_used": "phi3:mini",
+    "provider": "ollama",
+    "processing_time": 1.23,
+    "token_count": 45
+  }
+}
+```
+
+**Agent List Response:**
+```json
+{
+  "agents": [
+    {
+      "agent_id": "general_assistant",
+      "name": "General Assistant",
+      "description": "Enhanced general purpose agent",
+      "capabilities": ["conversation", "tool_use", "web_search"],
+      "status": "active"
+    }
+  ],
+  "total": 3
+}
+```
+
+**Error Response:**
+```json
+{
+  "detail": "Agent not found: invalid_agent",
+  "error_type": "AgentNotFoundException",
+  "timestamp": "2024-01-01T12:00:00Z"
+}
+```
+
+---
+
+## �🏗️ Extending the System
 
 ### 🤖 **Creating a Custom Agent**
 
 ```python
-from src.agents.base.agent import BaseAgent, AgentResponse
+from src.agents.base.agent import BaseAgent
 
 class MyCustomAgent(BaseAgent):
-    def __init__(self, **kwargs):
+    def __init__(self, agent_id: str = "custom_agent", **kwargs):
         super().__init__(
+            agent_id=agent_id,
             name="My Custom Agent",
             description="A specialized agent for specific tasks",
-            agent_type="custom",
-            capabilities=["custom_task", "specialized_processing"],
+            capabilities=["custom_processing", "domain_specific"],
             **kwargs
         )
+        self.custom_config = {}
     
     async def _initialize_agent(self):
-        # Custom initialization logic
-        pass
+        """Initialize custom agent resources"""
+        self.logger.info(f"Initializing {self.name}")
+        # Load custom configuration, models, tools, etc.
+        self.custom_config = {"initialized": True}
     
-    async def _process_message(self, message: str, session_id: str, context: dict) -> AgentResponse:
-        # Custom message processing logic
-        response_content = f"Processed: {message}"
+    async def _process_message(self, message: str, session_id: str, context: dict = None) -> dict:
+        """Process message with custom logic"""
+        self.logger.info(f"Processing message: {message}")
         
-        return AgentResponse(
-            content=response_content,
-            metadata={"custom_field": "value"}
-        )
+        # Custom processing logic
+        processed_content = f"Custom processing: {message}"
+        
+        return {
+            "content": processed_content,
+            "agent_id": self.agent_id,
+            "session_id": session_id,
+            "metadata": {
+                "processing_type": "custom",
+                "timestamp": "2024-01-01T00:00:00Z"
+            }
+        }
+    
+    async def _cleanup_agent(self):
+        """Cleanup resources"""
+        self.logger.info("Cleaning up custom agent")
+
+# Register with agent manager
+from src.agents.registry.manager import AgentManager
+agent_manager = AgentManager()
+custom_agent = MyCustomAgent()
+agent_manager.register_agent(custom_agent)
 ```
 
-### 🛠️ **Creating a Custom Tool**
+### � **Creating a Custom MCP Server**
 
 ```python
-from langchain_core.tools import BaseTool
+from src.mcp.base.tool import BaseMCPTool
 
-class MyCustomTool(BaseTool):
-    name: str = "my_tool"
-    description: str = "Description of what my tool does"
+class CustomMCPServer:
+    def __init__(self):
+        self.server_id = "custom_server"
+        self.name = "Custom Server"
+        self.description = "Custom MCP server implementation"
+        self.tools = {
+            "custom_tool": CustomTool()
+        }
     
-    def _run(self, input_data: str) -> str:
-        # Synchronous implementation
-        return f"Processed: {input_data}"
+    async def initialize(self):
+        """Initialize server resources"""
+        pass
     
-    async def _arun(self, input_data: str) -> str:
-        # Asynchronous implementation
+    async def get_tools(self) -> dict:
+        """Return available tools"""
+        return self.tools
+    
+    async def call_tool(self, tool_name: str, args: dict):
+        """Execute a tool with given arguments"""
+        if tool_name in self.tools:
+            return await self.tools[tool_name].execute(args)
+        raise ValueError(f"Tool {tool_name} not found")
+
+class CustomTool(BaseMCPTool):
+    def __init__(self):
+        super().__init__(
+            name="custom_tool",
+            description="A custom tool implementation"
+        )
+    
+    async def execute(self, args: dict) -> dict:
+        """Execute the custom tool"""
+        # Custom tool logic here
+        return {
+            "result": f"Custom tool executed with: {args}",
+            "success": True
+        }
+
+# Register with MCP manager
+from src.mcp.manager import get_mcp_manager
+mcp_manager = get_mcp_manager()
+custom_server = CustomMCPServer()
+await mcp_manager.register_server(custom_server)
+```
+
+### 🌐 **Adding a Custom Model Provider**
+
+```python
+from src.models.providers.base_provider import BaseProvider
+
+class CustomProvider(BaseProvider):
+    def __init__(self, api_key: str, base_url: str):
+        super().__init__("custom_provider")
+        self.api_key = api_key
+        self.base_url = base_url
+        self.client = None
+    
+    async def generate_text(self, model_name: str, messages: list, **kwargs) -> str:
+        """Generate text using custom API"""
+        # Implement your custom API call
+        response = await self._make_api_call(model_name, messages, **kwargs)
+        return response.get("text", "")
+    
+    async def generate_stream(self, model_name: str, messages: list, **kwargs):
+        """Generate streaming text"""
+        # Implement streaming response
+        async for chunk in self._stream_api_call(model_name, messages, **kwargs):
+            yield chunk
+    
+    async def list_models(self) -> list:
+        """List available models"""
+        # Return list of available models
+        return ["custom-model-1", "custom-model-2"]
+    
+    async def _make_api_call(self, model_name: str, messages: list, **kwargs):
+        """Make API call to your service"""
+        # Implement actual API integration
+        pass
         return f"Processed: {input_data}"
 
 # Register the tool
@@ -510,103 +801,80 @@ docker run -p 8000:8000 --env-file .env multi-agent-system
 
 ---
 
-## 🚀 Git Deployment Guide
+## � Configuration & Deployment
 
-### Quick Deployment Checklist
+### ⚙️ **Environment Variables**
 
-1. **Clone the repository**
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `OPENAI_API_KEY` | OpenAI API key for GPT models | - | No* |
+| `ANTHROPIC_API_KEY` | Anthropic API key for Claude models | - | No |
+| `OLLAMA_BASE_URL` | Ollama server endpoint | `http://localhost:11434` | Yes† |
+| `REDIS_URL` | Redis connection string | `redis://localhost:6379` | Yes |
+| `LOG_LEVEL` | Application log level | `INFO` | No |
+| `DEBUG` | Enable debug mode | `false` | No |
+| `CORS_ORIGINS` | Allowed CORS origins | `["*"]` | No |
+
+*At least one model provider (OpenAI, Anthropic, or Ollama) is required  
+†Ollama is included in Docker setup by default
+
+### 🐳 **Production Deployment**
+
+**Option 1: Docker Compose (Recommended)**
 ```bash
+# Clone repository
 git clone <your-repository-url>
 cd multi-agent-system
-```
 
-2. **Environment Setup**
-```bash
-# Copy environment template
+# Configure environment
 cp .env.example .env
+# Edit .env with your settings
 
-# Edit .env with your API keys and configuration
-nano .env  # or your preferred editor
+# Start all services
+docker-compose up -d
+
+# Check service health
+docker-compose logs -f app
+curl http://localhost:8000/health
 ```
 
-3. **Install Dependencies**
+**Option 2: Manual Installation**
 ```bash
-# Using pip
-pip install -e .
-
-# Using uv (recommended)
+# Install Python dependencies
 pip install uv
 uv sync
+
+# Start external services
+redis-server &
+ollama serve &
+ollama pull phi3:mini
+
+# Run application
+uvicorn src.main:app --host 0.0.0.0 --port 8000
 ```
 
-4. **Initialize Database** (if needed)
+### 🔍 **Monitoring & Logs**
+
+**View application logs:**
 ```bash
-# Create data directory
-mkdir -p data
+# Docker deployment
+docker-compose logs -f app
 
-# Run any database migrations
-python -m src.scripts.init_db  # if you have initialization scripts
+# Manual deployment
+tail -f logs/app.log
 ```
 
-5. **Start the Application**
+**Health monitoring endpoints:**
 ```bash
-# Development
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+# System health
+curl http://localhost:8000/health
 
-# Production
-python -m src.main
+# Agent registry status
+curl http://localhost:8000/api/v1/agents/list
+
+# Model availability
+curl http://localhost:8000/api/v1/models/available
 ```
-
-### 🔧 Production Deployment
-
-#### Environment Variables for Production
-Ensure these are set in your production `.env`:
-```bash
-# Security - CHANGE THESE!
-SECRET_KEY=your-super-secure-secret-key-here
-DEBUG=false
-ENVIRONMENT=production
-
-# Database (use production database)
-DATABASE_URL=postgresql://user:password@localhost/dbname
-
-# Redis (production instance)
-REDIS_URL=redis://your-redis-server:6379
-
-# API Keys (your actual keys)
-OPENAI_API_KEY=your_actual_openai_key
-ANTHROPIC_API_KEY=your_actual_anthropic_key
-
-# Logging
-LOG_LEVEL=INFO
-LOG_FILE=/var/log/multi-agent-system/app.log
-```
-
-#### Using Docker in Production
-```bash
-# Build and run with docker-compose
-docker-compose -f docker-compose.prod.yml up -d
-
-# Or build and run manually
-docker build -t multi-agent-system:latest .
-docker run -d \
-  --name multi-agent-system \
-  -p 8000:8000 \
-  --env-file .env \
-  --restart unless-stopped \
-  multi-agent-system:latest
-```
-
-#### Systemd Service (Linux Production)
-Create `/etc/systemd/system/multi-agent-system.service`:
-```ini
-[Unit]
-Description=Multi-Agent System API
-After=network.target
-
-[Service]
-Type=simple
-User=www-data
 WorkingDirectory=/opt/multi-agent-system
 Environment=PATH=/opt/multi-agent-system/venv/bin
 ExecStart=/opt/multi-agent-system/venv/bin/python -m src.main
@@ -629,197 +897,163 @@ sudo systemctl status multi-agent-system
 **Before deploying to production:**
 
 1. **Change default secrets**:
-   - Generate new `SECRET_KEY`
-   - Use production database credentials
-   - Use production Redis instance
-
-2. **Network security**:
-   - Configure firewall rules
-   - Use HTTPS/TLS certificates
-   - Restrict API access if needed
-
-3. **Environment isolation**:
-   - Never commit `.env` files
-   - Use environment-specific configurations
-   - Rotate API keys regularly
-
-### 📋 Pre-Deployment Verification
-
-Run this checklist before deploying:
-```bash
-# Test the application
-python -m pytest
-
-# Check for security issues
-python -m bandit -r src/
-
-# Lint the code
-python -m flake8 src/
-python -m black --check src/
-
-# Test Docker build
-docker build -t multi-agent-system-test .
-
-# Test with your .env file
-uvicorn src.main:app --host 0.0.0.0 --port 8000
-curl http://localhost:8000/health
-```
-
 ---
 
-## 🧪 Testing
+## 🧪 Testing & Validation
 
 ```bash
-# Run all tests
-pytest
+# Run system validation script
+python validate_system.py
 
-# Run with coverage
-pytest --cov=src --cov-report=html
+# Run API tests
+bash test_api.sh
 
-# Run specific test
-pytest tests/test_agent_registry.py
+# Run specific tests  
+python -m pytest tests/test_agent_registry.py -v
 ```
-
----
-
-## 📊 Monitoring & Observability
-
-### LangSmith Integration
-```python
-# Set environment variables
-LANGSMITH_API_KEY=your_langsmith_key
-LANGSMITH_PROJECT=multi-agent-system
-
-# Automatic tracing is enabled for all LangChain operations
-```
-
-### Metrics
-- Agent performance statistics
-- Tool usage tracking
-- Memory system metrics
-- API endpoint monitoring
-
----
-
-## 🤝 Contributing
-
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Commit changes** (`git commit -m 'Add amazing feature'`)
-4. **Push to branch** (`git push origin feature/amazing-feature`)
-5. **Open a Pull Request**
-
-### Development Setup
-```bash
-# Install development dependencies
-pip install -e ".[dev]"
-
-# Install pre-commit hooks
-pre-commit install
-
-# Run linting
-black src tests
-isort src tests
-flake8 src tests
-mypy src
-```
-
----
-
-## 📚 Documentation
-
-- **API Documentation**: `http://localhost:8000/docs` (when running)
-- **Architecture Guide**: `docs/ARCHITECTURE.md`
-- **Development Guide**: `docs/DEVELOPMENT.md`
-- **API Examples**: `API_EXAMPLES.md`
-
----
-
-## ⚠️ Important Notes
-
-### 🔒 **Security**
-- **Sandboxed code execution** for safety
-- **Input validation** for all tools
-- **API rate limiting** enabled
-- **Environment isolation** recommended
-
-### 🎛️ **Performance**
-- **Async/await** throughout the system
-- **Connection pooling** for databases
-- **Caching** for frequently used data
-- **Memory optimization** for conversations
-
-### 🔄 **Scalability**
-- **Horizontal scaling** support
-- **Load balancing** ready
-- **Microservices architecture**
-- **Database optimization**
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Common Issues
+### **Common Issues**
 
-**1. Import errors after installation**
+**🔴 Docker Services Not Starting**
 ```bash
-# Reinstall in development mode
-pip install -e .
+# Check Docker daemon
+docker --version
+docker-compose --version
+
+# View service logs
+docker-compose logs redis
+docker-compose logs ollama
+docker-compose logs app
+
+# Restart specific service
+docker-compose restart app
 ```
 
-**2. OpenAI API errors**
+**🔴 Ollama Model Issues**
 ```bash
-# Check API key
-echo $OPENAI_API_KEY
+# Check Ollama status
+curl http://localhost:11434/api/tags
 
-# Verify connectivity
-curl -H "Authorization: Bearer $OPENAI_API_KEY" https://api.openai.com/v1/models
+# Pull model manually
+docker exec -it agents-ollama-1 ollama pull phi3:mini
+
+# Check model availability
+curl -X POST http://localhost:11434/api/generate \
+  -d '{"model": "phi3:mini", "prompt": "test", "stream": false}'
 ```
 
-**3. Database connection issues**
+**🔴 Redis Connection Failed**
 ```bash
-# Create data directory
-mkdir -p data
+# Test Redis connection
+redis-cli ping
 
-# Check permissions
-ls -la data/
+# Check Redis in Docker
+docker-compose exec redis redis-cli ping
+
+# Clear Redis cache
+redis-cli FLUSHALL
 ```
 
-**4. Memory system issues**
+**🔴 Agent Registry Issues**
 ```bash
-# Install vector database dependencies
-pip install chromadb faiss-cpu
+# Check agent loading logs
+docker-compose logs app | grep "agent"
+
+# Test agent endpoints directly
+curl http://localhost:8000/api/v1/agents/list
+curl http://localhost:8000/api/v1/agents/general_assistant
+```
+
+**🔴 Memory/Performance Issues**
+```bash
+# Monitor Docker resource usage
+docker stats
+
+# Increase memory limits in docker-compose.yml
+# Restart with fresh containers
+docker-compose down && docker-compose up -d
+```
+
+### **Debug Commands**
+
+```bash
+# System health check
+curl http://localhost:8000/health | jq
+
+# Validate all components
+python validate_system.py
+
+# Test complete workflow
+curl -X POST "http://localhost:8000/api/v1/agents/chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Hello, test the system",
+    "agent_id": "general_assistant",
+    "session_id": "debug_session"
+  }' | jq
+```
+
+---
+
+## 📚 Additional Resources
+
+- **📖 [API Documentation](API_DOCUMENTATION.md)** - Complete API reference
+- **🏗️ [Architecture Guide](ARCHITECTURE.md)** - System design & components  
+- **⚡ [Quick Reference](QUICK_REFERENCE.md)** - Common commands & examples
+- **🚀 [Development Guide](DEVELOPMENT.md)** - Contributing & customization
+- **📋 [Validation Report](DOCKER_VALIDATION_REPORT.md)** - System test results
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+### **Development Setup**
+```bash
+# Install development dependencies
+uv sync --dev
+
+# Run development server
+uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+# Run validation tests
+python validate_system.py
+bash test_api.sh
 ```
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **[LangChain](https://python.langchain.com/)** - LLM framework
-- **[LangGraph](https://langchain-ai.github.io/langgraph/)** - Multi-agent workflows
-- **[FastAPI](https://fastapi.tiangolo.com/)** - Web framework
-- **[Pydantic](https://docs.pydantic.dev/)** - Data validation
-- **[ChromaDB](https://www.trychroma.com/)** - Vector database
+- **[FastAPI](https://fastapi.tiangolo.com/)** - High-performance web framework
+- **[Ollama](https://ollama.ai/)** - Local LLM deployment platform  
+- **[Redis](https://redis.io/)** - In-memory data structure store
+- **[Model Context Protocol](https://modelcontextprotocol.io/)** - Tool integration standard
+- **[Docker](https://www.docker.com/)** - Containerization platform
 
 ---
 
-## 🚀 Getting Started Checklist
+## ⭐ Star History
 
-- [ ] Install Python 3.10+
-- [ ] Clone the repository
-- [ ] Install dependencies (`pip install -e .`)
-- [ ] Set up `.env` file with API keys
-- [ ] Run quick start example (`python -m tests.examples.quickstart`)
-- [ ] Start the API server (`uvicorn src.main:app --reload`)
-- [ ] Test the API endpoints
-- [ ] Explore the examples and documentation
-- [ ] Create your first custom agent
-- [ ] Build your first workflow
+If this project helps you, please consider giving it a star! 
 
-**Ready to build amazing AI agents? Let's get started! 🎉**
+**Ready to build powerful AI agents? Start with Docker deployment! 🚀**
+
+```bash
+docker-compose up -d && curl http://localhost:8000/health
+```
