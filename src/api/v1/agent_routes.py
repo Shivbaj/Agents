@@ -1,5 +1,8 @@
 """
-Agent-related API endpoints
+Agent-related HTTP API route handlers
+
+This module contains FastAPI route handlers for agent management operations
+including agent discovery, listing, chat interactions, and statistics.
 """
 from typing import List, Optional, Dict, Any
 from uuid import uuid4

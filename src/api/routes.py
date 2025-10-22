@@ -3,7 +3,7 @@ Main API router that includes all route modules
 """
 from fastapi import APIRouter
 
-from src.api.v1.agents import router as agents_router
+from src.api.v1.agent_routes import router as agents_router
 from src.api.v1.models import router as models_router
 from src.api.v1.health import router as health_router
 from src.api.v1.mcp import router as mcp_router

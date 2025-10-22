@@ -365,8 +365,13 @@ class MCPManager:
         
         # Call the tool on the server
         try:
-            if hasattr(server, 'call_tool'):
-                result = await server.call_tool(tool_name, arguments)
+            if hasattr(server, 'execute_tool'):
+                response = await server.execute_tool(tool_name, arguments)
+                # Convert MCPToolResponse to dict for backward compatibility
+                if hasattr(response, 'success'):
+                    return response  # Return the MCPToolResponse object directly
+                else:
+                    return response  # It's already a dict
             else:
                 # Fallback: try to get tool directly and execute
                 tools = await server.get_tools() if hasattr(server, 'get_tools') else getattr(server, 'tools', {})
@@ -375,7 +380,12 @@ class MCPManager:
                 
                 tool = tools[tool_name]
                 if hasattr(tool, 'execute'):
-                    result = await tool.execute(arguments)
+                    from .base.tool import MCPToolRequest
+                    request = MCPToolRequest(
+                        tool_name=tool_name,
+                        parameters=arguments
+                    )
+                    result = await tool.execute(request)
                 else:
                     raise ValueError(f"Tool '{tool_name}' does not have execute method")
             

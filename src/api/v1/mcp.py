@@ -129,16 +129,30 @@ async def execute_mcp_tool(
     try:
         result = await mcp_manager.call_tool(request.tool_name, request.arguments)
         
-        return MCPToolExecuteResponse(
-            tool_name=request.tool_name,
-            success=True,
-            result=result,
-            execution_time=getattr(result, 'execution_time', None),
-            metadata={
-                "timestamp": result.get("timestamp") if isinstance(result, dict) else None,
-                "server_id": await mcp_manager.get_tool_server(request.tool_name)
-            }
-        )
+        # Handle MCPToolResponse object
+        if hasattr(result, 'success'):
+            return MCPToolExecuteResponse(
+                tool_name=request.tool_name,
+                success=result.success,
+                result=result,
+                execution_time=getattr(result, 'execution_time', None),
+                metadata={
+                    "timestamp": getattr(result.metadata, 'get', lambda x: None)("timestamp") if result.metadata else None,
+                    "server_id": await mcp_manager.get_tool_server(request.tool_name)
+                }
+            )
+        else:
+            # Handle dict result (backward compatibility)
+            return MCPToolExecuteResponse(
+                tool_name=request.tool_name,
+                success=True,
+                result=result,
+                execution_time=getattr(result, 'execution_time', None),
+                metadata={
+                    "timestamp": result.get("timestamp") if isinstance(result, dict) else None,
+                    "server_id": await mcp_manager.get_tool_server(request.tool_name)
+                }
+            )
         
     except Exception as e:
         logger.error(f"Failed to execute MCP tool '{request.tool_name}': {str(e)}")
