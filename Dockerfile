@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     build-essential \
     git \
-    libgl1-mesa-glx \
+    libgl1-mesa-dri \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
@@ -32,15 +32,11 @@ WORKDIR /app
 # Development stage
 FROM base AS development
 
-# Copy dependency files
-COPY pyproject.toml ./
-COPY uv.lock* ./
+# Copy application code first (needed for pyproject.toml build)
+COPY . .
 
 # Install all dependencies including dev dependencies
 RUN uv sync --frozen
-
-# Copy application code
-COPY . .
 
 # Create directories
 RUN mkdir -p logs data/uploads data/models data/cache
@@ -57,15 +53,11 @@ CMD ["uv", "run", "uvicorn", "src.main:app", "--reload", "--host", "0.0.0.0", "-
 # Production stage
 FROM base AS production
 
-# Copy dependency files first for better caching
-COPY pyproject.toml ./
-COPY uv.lock* ./
+# Copy application code (needed for pyproject.toml build)
+COPY . .
 
 # Install only production dependencies
 RUN uv sync --frozen --no-dev
-
-# Copy application code
-COPY . .
 
 # Create necessary directories with proper permissions
 RUN mkdir -p logs data/uploads data/models data/cache && \
