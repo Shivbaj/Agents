@@ -1,0 +1,157 @@
+{
+  "info": {
+    "name": "Multi-Agent System API - Working Collection",
+    "description": "Complete API collection for the Multi-Agent System with CPU-only Ollama phi3:mini",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "ollamaUrl", 
+      "value": "http://localhost:11434"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Basic Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Detailed Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "health", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Agent Registry",
+      "item": [
+        {
+          "name": "List All Agents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "list"]
+            }
+          }
+        },
+        {
+          "name": "Discover Agents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/discover?query=assistant",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "discover"],
+              "query": [{"key": "query", "value": "assistant"}]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Model Management",
+      "item": [
+        {
+          "name": "List Model Providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/models/providers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "models", "providers"]
+            }
+          }
+        },
+        {
+          "name": "List Models",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/models/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "models", "list"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ollama Direct",
+      "item": [
+        {
+          "name": "List Ollama Models",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{ollamaUrl}}/api/tags",
+              "host": ["{{ollamaUrl}}"],
+              "path": ["api", "tags"]
+            }
+          }
+        },
+        {
+          "name": "Ollama Generate",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"phi3:mini\",\n  \"prompt\": \"What are AI agents?\",\n  \"stream\": false\n}"
+            },
+            "url": {
+              "raw": "{{ollamaUrl}}/api/generate",
+              "host": ["{{ollamaUrl}}"],
+              "path": ["api", "generate"]
+            }
+          }
+        },
+        {
+          "name": "Ollama Chat",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"phi3:mini\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Hello! Explain multi-agent systems.\"\n    }\n  ],\n  \"stream\": false\n}"
+            },
+            "url": {
+              "raw": "{{ollamaUrl}}/api/chat",
+              "host": ["{{ollamaUrl}}"],
+              "path": ["api", "chat"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
