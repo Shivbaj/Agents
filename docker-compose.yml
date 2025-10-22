@@ -1,5 +1,5 @@
 services:
-  # Main application
+  # Main application (CPU-optimized configuration)
   app:
     build: 
       context: .
@@ -63,9 +63,9 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
 
-  # Ollama for local LLM models
+  # Ollama for local LLM models (CPU-only with small model)
   ollama:
     image: ollama/ollama
     ports:
@@ -74,15 +74,28 @@ services:
       - ollama_data:/root/.ollama
     environment:
       - OLLAMA_ORIGINS=*
+      - OLLAMA_HOST=0.0.0.0
     networks:
       - agent-network
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    # GPU deployment disabled for CPU-only usage
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #         count: 1
+    #         capabilities: [gpu]
+    # CPU-only startup with small model
+    entrypoint: >
+      /bin/bash -c "
+      ollama serve &
+      echo 'Waiting for Ollama to start...' &&
+      sleep 30 &&
+      echo 'Pulling phi3:mini model (lightweight ~2GB)...' &&
+      ollama pull phi3:mini &&
+      echo 'Model loaded successfully!' &&
+      wait
+      "
 
   # Optional: Prometheus for monitoring
   prometheus:

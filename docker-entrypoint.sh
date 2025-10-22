@@ -23,36 +23,44 @@ echo "  - Docker: ${DOCKER_ENV:-false}"
 # Wait for external services
 echo -e "${BLUE}⏳ Waiting for external services...${NC}"
 
-# Wait for Redis
-echo -e "${YELLOW}  Checking Redis connection...${NC}"
-max_retries=30
-for i in $(seq 1 $max_retries); do
-    if redis-cli -h redis ping > /dev/null 2>&1; then
-        echo -e "${GREEN}  ✓ Redis is ready${NC}"
-        break
-    fi
-    if [ $i -eq $max_retries ]; then
-        echo -e "${RED}  ✗ Redis failed to start after $max_retries attempts${NC}"
-        exit 1
-    fi
-    echo -e "${YELLOW}  Attempt $i/$max_retries - Redis not ready, waiting...${NC}"
-    sleep 2
-done
+# Wait for Redis (if configured)
+if [ -n "$REDIS_URL" ] && [ "$REDIS_URL" != "" ]; then
+    echo -e "${YELLOW}  Checking Redis connection...${NC}"
+    max_retries=30
+    for i in $(seq 1 $max_retries); do
+        if uv run python -c "import redis; redis.from_url('${REDIS_URL}').ping()" > /dev/null 2>&1; then
+            echo -e "${GREEN}  ✓ Redis is ready${NC}"
+            break
+        fi
+        if [ $i -eq $max_retries ]; then
+            echo -e "${RED}  ✗ Redis failed to start after $max_retries attempts${NC}"
+            exit 1
+        fi
+        echo -e "${YELLOW}  Attempt $i/$max_retries - Redis not ready, waiting...${NC}"
+        sleep 2
+    done
+else
+    echo -e "${YELLOW}  ⚠ Redis not configured, skipping...${NC}"
+fi
 
-# Wait for Ollama
-echo -e "${YELLOW}  Checking Ollama connection...${NC}"
-for i in $(seq 1 $max_retries); do
-    if curl -s "${OLLAMA_BASE_URL:-http://ollama:11434}/api/tags" > /dev/null 2>&1; then
-        echo -e "${GREEN}  ✓ Ollama is ready${NC}"
-        break
-    fi
-    if [ $i -eq $max_retries ]; then
-        echo -e "${YELLOW}  ⚠ Ollama not available (continuing anyway)${NC}"
-        break
-    fi
-    echo -e "${YELLOW}  Attempt $i/$max_retries - Ollama not ready, waiting...${NC}"
-    sleep 2
-done
+# Wait for Ollama (if configured)
+if [ -n "$OLLAMA_BASE_URL" ] && [ "$OLLAMA_BASE_URL" != "" ]; then
+    echo -e "${YELLOW}  Checking Ollama connection...${NC}"
+    for i in $(seq 1 $max_retries); do
+        if curl -s "${OLLAMA_BASE_URL}/api/tags" > /dev/null 2>&1; then
+            echo -e "${GREEN}  ✓ Ollama is ready${NC}"
+            break
+        fi
+        if [ $i -eq $max_retries ]; then
+            echo -e "${YELLOW}  ⚠ Ollama not available (continuing anyway)${NC}"
+            break
+        fi
+        echo -e "${YELLOW}  Attempt $i/$max_retries - Ollama not ready, waiting...${NC}"
+        sleep 2
+    done
+else
+    echo -e "${YELLOW}  ⚠ Ollama not configured, skipping...${NC}"
+fi
 
 # Initialize application
 echo -e "${BLUE}🚀 Initializing application...${NC}"

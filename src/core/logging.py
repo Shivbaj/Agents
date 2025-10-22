@@ -33,11 +33,11 @@ def setup_logging(
     log_path = Path(log_file)
     log_path.parent.mkdir(parents=True, exist_ok=True)
     
-    # Define formats
+    # Define formats  
     if format_type.lower() == "json":
         log_format = (
             "{"
-            '"time": "{time:YYYY-MM-DD HH:mm:ss.SSS}", '
+            '"timestamp": "{time:YYYY-MM-DD HH:mm:ss.SSS}", '
             '"level": "{level}", '
             '"module": "{module}", '
             '"function": "{function}", '

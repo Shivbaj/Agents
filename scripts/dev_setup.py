@@ -62,6 +62,11 @@ async def wait_for_services():
     if not check_environment():
         return
     
+    # Skip service checks during Docker build
+    if os.getenv("DOCKER_BUILD_PHASE") == "true":
+        print("🏗️  Docker build phase - skipping service checks")
+        return
+    
     print("🐳 Docker environment detected, waiting for services...")
     
     # Wait for Redis

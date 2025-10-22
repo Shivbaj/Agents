@@ -8,12 +8,27 @@ from typing import Dict, List, Optional, Any, AsyncGenerator, Union
 from uuid import uuid4
 
 from langchain_core.language_models import BaseLanguageModel, BaseChatModel
-from langchain_core.memory import BaseMemory
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.tools import BaseTool
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
-from langchain.memory import ConversationBufferWindowMemory
+
+# Define BaseMemory locally for compatibility
+from typing import Protocol, runtime_checkable
+
+@runtime_checkable  
+class BaseMemory(Protocol):
+    """Base memory interface for compatibility"""
+    pass
+
+# Import memory with fallback
+try:
+    from langchain_community.memory import ConversationBufferWindowMemory
+except ImportError:
+    try:
+        from langchain.memory import ConversationBufferWindowMemory
+    except ImportError:
+        ConversationBufferWindowMemory = None
 from loguru import logger
 
 from src.config.settings import get_settings

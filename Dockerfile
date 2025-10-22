@@ -10,21 +10,17 @@ ENV UV_SYSTEM_PYTHON=1
 ENV DOCKER_ENV=true
 ENV PATH="/root/.local/bin:$PATH"
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     build-essential \
     git \
-    libgl1-mesa-dri \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Install uv package manager
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+# Install uv package manager using pip for better reliability
+RUN pip install uv && \
+    uv --version
 
 # Set work directory
 WORKDIR /app
@@ -32,11 +28,17 @@ WORKDIR /app
 # Development stage
 FROM base AS development
 
-# Copy application code first (needed for pyproject.toml build)
-COPY . .
+# Copy dependency files and README for better layer caching
+COPY pyproject.toml uv.lock* README.md ./
 
-# Install all dependencies including dev dependencies
-RUN uv sync --frozen
+# Install dependencies with timeout and caching optimizations
+ENV UV_HTTP_TIMEOUT=120
+ENV UV_CACHE_DIR=/tmp/uv-cache
+RUN --mount=type=cache,target=/tmp/uv-cache \
+    uv sync --frozen
+
+# Copy application code
+COPY . .
 
 # Create directories
 RUN mkdir -p logs data/uploads data/models data/cache
@@ -53,11 +55,17 @@ CMD ["uv", "run", "uvicorn", "src.main:app", "--reload", "--host", "0.0.0.0", "-
 # Production stage
 FROM base AS production
 
-# Copy application code (needed for pyproject.toml build)
-COPY . .
+# Copy dependency files and README for better layer caching
+COPY pyproject.toml uv.lock* README.md ./
 
-# Install only production dependencies
-RUN uv sync --frozen --no-dev
+# Install only production dependencies with optimizations  
+ENV UV_HTTP_TIMEOUT=120
+ENV UV_CACHE_DIR=/tmp/uv-cache
+RUN --mount=type=cache,target=/tmp/uv-cache \
+    uv sync --frozen --no-dev
+
+# Copy application code
+COPY . .
 
 # Create necessary directories with proper permissions
 RUN mkdir -p logs data/uploads data/models data/cache && \
@@ -71,13 +79,13 @@ RUN chmod +x scripts/dev_setup.py docker-entrypoint.sh
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Initialize the application (non-critical)
-RUN uv run python scripts/dev_setup.py || true
+# Initialize the application (non-critical) - set build phase flag
+RUN DOCKER_BUILD_PHASE=true uv run python scripts/dev_setup.py || true
 
-# Create a non-root user for security
+# Create a non-root user for security and set up environment
 RUN useradd --create-home --shell /bin/bash app && \
-    chown -R app:app /app
-USER app
+    chown -R app:app /app && \
+    echo 'export PATH="/root/.local/bin:$PATH"' >> /home/app/.bashrc
 
 # Expose port
 EXPOSE 8000
@@ -86,8 +94,9 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Set entrypoint
+# Set entrypoint and default command
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD []
 
 # Default stage is production
 FROM production

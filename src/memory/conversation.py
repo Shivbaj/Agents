@@ -50,7 +50,15 @@ from typing import Dict, List, Optional, Any, Tuple
 from uuid import uuid4
 from abc import ABC, abstractmethod
 
-from langchain.memory import ConversationBufferWindowMemory, ConversationSummaryBufferMemory
+try:
+    from langchain_community.memory import ConversationBufferWindowMemory, ConversationSummaryBufferMemory
+except ImportError:
+    try:
+        from langchain.memory import ConversationBufferWindowMemory, ConversationSummaryBufferMemory
+    except ImportError:
+        # Fallback: create dummy classes
+        ConversationBufferWindowMemory = None
+        ConversationSummaryBufferMemory = None
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 from langchain_core.embeddings import Embeddings
 from langchain_openai import OpenAIEmbeddings

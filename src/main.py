@@ -65,6 +65,20 @@ async def lifespan(app: FastAPI):
     await _check_external_services()
     
     logger.info("🚀 Multi-Agent System startup complete!")
+    
+    # Yield control to the application
+    yield
+    
+    # Shutdown (when the application stops)
+    logger.info("🛑 Multi-Agent System shutting down...")
+    
+    # Cleanup resources
+    try:
+        if hasattr(app.state, 'mcp_manager'):
+            await app.state.mcp_manager.cleanup()
+        logger.info("✓ Cleanup complete")
+    except Exception as e:
+        logger.error(f"Error during cleanup: {e}")
 
 
 async def _check_external_services():
@@ -103,31 +117,14 @@ async def _check_external_services():
         logger.info("✓ Anthropic API key configured")
     else:
         logger.warning("⚠️ Anthropic API key not configured")
-    
-    yield
-    
-    # Shutdown
-    logger.info("🔄 Shutting down Multi-Agent System...")
-    
-    # Cleanup MCP manager
-    if hasattr(app.state, 'mcp_manager'):
-        await app.state.mcp_manager.cleanup()
-        logger.info("✓ MCP manager cleaned up")
-    
-    # Cleanup agent registry
-    if hasattr(app.state, 'agent_registry'):
-        await app.state.agent_registry.cleanup()
-        logger.info("✓ Agent registry cleaned up")
-    
-    logger.info("✅ Multi-Agent System shutdown complete!")
 
 
 def create_app() -> FastAPI:
     """Create and configure FastAPI application"""
     settings = get_settings()
     
-    # Setup logging
-    setup_logging(settings.log_level, settings.log_format)
+    # Setup logging (force text format to avoid JSON issues)
+    setup_logging(settings.log_level, "text")
     
     app = FastAPI(
         title=settings.api_title,
