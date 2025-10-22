@@ -93,6 +93,58 @@ async def list_agents(
         raise HTTPException(status_code=500, detail="Failed to list agents")
 
 
+@router.get("/stats", response_model=AgentStatsResponse)
+async def get_agent_stats(
+    agent_registry: AgentManager = Depends(get_agent_registry)
+):
+    """
+    Get comprehensive statistics about all agents
+    
+    Returns detailed statistics including agent counts, types, providers, and capabilities.
+    
+    Example usage:
+    ```bash
+    curl http://localhost:8000/api/v1/agents/stats
+    ```
+    """
+    try:
+        agents = agent_registry.list_agents()
+        
+        # Calculate statistics
+        total_agents = len(agents)
+        active_agents = len([a for a in agents if a.get("status") == "active"])
+        
+        # Group by agent type
+        agent_types = {}
+        for agent in agents:
+            agent_type = agent.get("agent_type", "unknown")
+            agent_types[agent_type] = agent_types.get(agent_type, 0) + 1
+        
+        # Group by model provider
+        model_providers = {}
+        for agent in agents:
+            provider = agent.get("model_provider", "unknown")
+            model_providers[provider] = model_providers.get(provider, 0) + 1
+        
+        # Count capabilities occurrence
+        capabilities_stats = {}
+        for agent in agents:
+            capabilities = agent.get("capabilities", [])
+            for capability in capabilities:
+                capabilities_stats[capability] = capabilities_stats.get(capability, 0) + 1
+        
+        return AgentStatsResponse(
+            total_agents=total_agents,
+            active_agents=active_agents,
+            agent_types=agent_types,
+            model_providers=model_providers,
+            capabilities_stats=capabilities_stats
+        )
+    except Exception as e:
+        logger.error(f"Failed to get agent stats: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get agent stats")
+
+
 @router.get("/{agent_id}", response_model=AgentDetailsResponse)
 async def get_agent_details(
     agent_id: str,
@@ -226,58 +278,6 @@ async def stream_chat_with_agent(
     except Exception as e:
         logger.error(f"Stream chat with agent failed: {str(e)}")
         raise AgentExecutionException(request.agent_id, str(e))
-
-
-@router.get("/stats", response_model=AgentStatsResponse)
-async def get_agent_stats(
-    agent_registry: AgentManager = Depends(get_agent_registry)
-):
-    """
-    Get comprehensive statistics about all agents
-    
-    Returns detailed statistics including agent counts, types, providers, and capabilities.
-    
-    Example usage:
-    ```bash
-    curl http://localhost:8000/api/v1/agents/stats
-    ```
-    """
-    try:
-        agents = agent_registry.list_agents()
-        
-        # Calculate statistics
-        total_agents = len(agents)
-        active_agents = len([a for a in agents if a.get("status") == "active"])
-        
-        # Count by agent type
-        agent_types = {}
-        for agent in agents:
-            agent_type = agent.get("agent_type", "unknown")
-            agent_types[agent_type] = agent_types.get(agent_type, 0) + 1
-        
-        # Count by model provider
-        model_providers = {}
-        for agent in agents:
-            provider = agent.get("model_provider", "unknown")
-            model_providers[provider] = model_providers.get(provider, 0) + 1
-        
-        # Count capabilities
-        capabilities_stats = {}
-        for agent in agents:
-            for capability in agent.get("capabilities", []):
-                capabilities_stats[capability] = capabilities_stats.get(capability, 0) + 1
-        
-        return AgentStatsResponse(
-            total_agents=total_agents,
-            active_agents=active_agents,
-            agent_types=agent_types,
-            model_providers=model_providers,
-            capabilities_stats=capabilities_stats
-        )
-        
-    except Exception as e:
-        logger.error(f"Failed to get agent stats: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to get agent statistics")
 
 
 @router.get("/{agent_id}/card", response_model=AgentCardResponse)

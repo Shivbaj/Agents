@@ -121,6 +121,10 @@ class BaseAgent(ABC):
         # Configuration
         self.settings = get_settings()
         
+        # Model information (can be overridden by subclasses)
+        self.model_provider = kwargs.get('model_provider', 'unknown')
+        self.model_name = kwargs.get('model_name', 'unknown')
+        
         # Agent state
         self.is_initialized = False
         self.supports_streaming = False
