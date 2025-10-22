@@ -1,0 +1,232 @@
+version: '3.8'
+
+# Production Docker Compose configuration
+# Optimized for production deployment with monitoring and security
+
+services:
+  # Main application (production)
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "8000:8000"
+    environment:
+      # Production settings
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - WORKERS=2
+      
+      # Database
+      - DATABASE_URL=sqlite:///./data/agents.db
+      
+      # External services
+      - REDIS_URL=redis://redis:6379
+      - OLLAMA_BASE_URL=http://ollama:11434
+      
+      # API Keys (from environment or secrets)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      
+      # Production-specific
+      - LOG_LEVEL=INFO
+      - CORS_ORIGINS=["https://yourdomain.com", "https://api.yourdomain.com"]
+      
+      # Security
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+      
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - agent_cache:/app/data/cache
+    depends_on:
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - agent-network
+      - monitoring
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Load balancer (nginx)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/ssl:/etc/nginx/ssl:ro  # SSL certificates
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - agent-network
+
+  # Redis (production configuration)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./docker/redis.conf:/etc/redis/redis.conf:ro
+    networks:
+      - agent-network
+    restart: unless-stopped
+    command: redis-server /etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Ollama with GPU support
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_ORIGINS=*
+      - OLLAMA_HOST=0.0.0.0
+    networks:
+      - agent-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Prometheus monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  # Grafana dashboards
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=redis-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - monitoring
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # Log aggregation (optional)
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./docker/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring
+    restart: unless-stopped
+    profiles:
+      - logging
+
+  # Log shipping (optional)
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - ./logs:/var/log/app:ro
+      - ./docker/promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - monitoring
+    restart: unless-stopped
+    depends_on:
+      - loki
+    profiles:
+      - logging
+
+  # Backup service (optional)
+  backup:
+    image: alpine:latest
+    volumes:
+      - ./data:/backup/data:ro
+      - ./backups:/backups
+    command: >
+      sh -c "
+        while true; do
+          echo 'Creating backup...'
+          tar -czf /backups/backup-$(date +%Y%m%d-%H%M%S).tar.gz -C /backup .
+          find /backups -name '*.tar.gz' -mtime +7 -delete
+          sleep 86400  # Daily backups
+        done
+      "
+    restart: unless-stopped
+    profiles:
+      - backup
+
+volumes:
+  redis_data:
+  ollama_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  agent_cache:
+
+networks:
+  agent-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  monitoring:
+    driver: bridge

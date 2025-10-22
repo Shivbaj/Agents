@@ -1,0 +1,406 @@
+{
+  "info": {
+    "name": "Multi-Agent System API",
+    "description": "Comprehensive API collection for the Multi-Agent System with FastAPI",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "test_session_{{$randomInt}}",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & System",
+      "item": [
+        {
+          "name": "Root Endpoint",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Comprehensive Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "health", ""]
+            }
+          }
+        },
+        {
+          "name": "Readiness Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/health/ready",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "health", "ready"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Agent Management",
+      "item": [
+        {
+          "name": "List All Agents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "list"]
+            }
+          }
+        },
+        {
+          "name": "Discover Agents by Query",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/discover?query=summarize document&limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "discover"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "summarize document"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Agent Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/summarizer_agent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "summarizer_agent"]
+            }
+          }
+        },
+        {
+          "name": "Reload Agent",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/summarizer_agent/reload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "summarizer_agent", "reload"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Agent Chat",
+      "item": [
+        {
+          "name": "Chat with Summarizer Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Please summarize the following article: Artificial intelligence (AI) is rapidly transforming industries worldwide. From healthcare to finance, AI technologies are enabling unprecedented automation and decision-making capabilities. However, with great power comes great responsibility. Organizations must ensure ethical AI deployment, data privacy protection, and transparent algorithmic processes.\",\n  \"agent_id\": \"summarizer_agent\",\n  \"session_id\": \"{{sessionId}}\",\n  \"context\": {\n    \"summary_length\": 100,\n    \"summary_style\": \"professional\",\n    \"document_type\": \"article\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "chat"]
+            }
+          }
+        },
+        {
+          "name": "Chat with General Assistant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Can you explain the concept of machine learning in simple terms?\",\n  \"agent_id\": \"general_assistant\",\n  \"session_id\": \"{{sessionId}}\",\n  \"context\": {\n    \"response_style\": \"balanced\",\n    \"personality\": \"helpful\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "chat"]
+            }
+          }
+        },
+        {
+          "name": "Stream Chat with General Assistant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Write a short story about an AI agent helping humans\",\n  \"agent_id\": \"general_assistant\",\n  \"session_id\": \"{{sessionId}}\",\n  \"stream\": true,\n  \"context\": {\n    \"personality\": \"creative\",\n    \"response_style\": \"detailed\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/chat/stream",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "chat", "stream"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Multimodal",
+      "item": [
+        {
+          "name": "Vision Agent - Image Analysis",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "message",
+                  "value": "Please describe this image in detail",
+                  "type": "text"
+                },
+                {
+                  "key": "agent_id",
+                  "value": "vision_agent",
+                  "type": "text"
+                },
+                {
+                  "key": "session_id",
+                  "value": "{{sessionId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/multimodal",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "multimodal"]
+            }
+          },
+          "description": "Upload an image file to analyze with the vision agent"
+        }
+      ]
+    },
+    {
+      "name": "Model Management",
+      "item": [
+        {
+          "name": "List All Models",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/models/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "models", "list"]
+            }
+          }
+        },
+        {
+          "name": "List Models by Provider",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/models/list?provider=openai&model_type=text",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "models", "list"],
+              "query": [
+                {
+                  "key": "provider",
+                  "value": "openai"
+                },
+                {
+                  "key": "model_type",
+                  "value": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Model Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/models/openai/gpt-4-turbo-preview",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "models", "openai", "gpt-4-turbo-preview"]
+            }
+          }
+        },
+        {
+          "name": "Test Model",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"openai\",\n  \"model_name\": \"gpt-3.5-turbo\",\n  \"test_message\": \"Hello, how are you today?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/models/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "models", "test"]
+            }
+          }
+        },
+        {
+          "name": "Load Ollama Model",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/models/ollama/llama3.2:1b/load",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "models", "ollama", "llama3.2:1b", "load"]
+            }
+          }
+        },
+        {
+          "name": "List Providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/models/providers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "models", "providers"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Example Workflows",
+      "item": [
+        {
+          "name": "Document Summarization Workflow",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"The rapid advancement of artificial intelligence has brought about significant changes across various industries. Machine learning algorithms are now capable of processing vast amounts of data, identifying patterns, and making predictions with unprecedented accuracy. In healthcare, AI is revolutionizing diagnostic procedures, drug discovery, and personalized treatment plans. The financial sector benefits from AI-powered fraud detection, algorithmic trading, and risk assessment tools. Transportation is being transformed through autonomous vehicles and smart traffic management systems. However, these technological advances also raise important ethical considerations, including job displacement, privacy concerns, and the need for transparent and accountable AI systems. As we continue to integrate AI into our daily lives, it becomes crucial to strike a balance between innovation and responsible deployment, ensuring that the benefits of artificial intelligence are accessible to all while minimizing potential risks and negative impacts on society.\",\n  \"agent_id\": \"summarizer_agent\",\n  \"session_id\": \"workflow_{{$randomInt}}\",\n  \"context\": {\n    \"summary_length\": 150,\n    \"summary_style\": \"executive\",\n    \"document_type\": \"technical\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "chat"]
+            }
+          }
+        },
+        {
+          "name": "Creative Writing Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Write a creative short story about a multi-agent AI system that helps solve climate change. Include different types of agents working together.\",\n  \"agent_id\": \"general_assistant\",\n  \"session_id\": \"creative_{{$randomInt}}\",\n  \"context\": {\n    \"personality\": \"creative\",\n    \"response_style\": \"detailed\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/agents/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "agents", "chat"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-generate session ID if not set",
+          "if (!pm.variables.get('sessionId')) {",
+          "    pm.variables.set('sessionId', 'session_' + Math.floor(Math.random() * 10000));",
+          "}"
+        ]
+      }
+    }
+  ]
+}

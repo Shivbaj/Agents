@@ -1,0 +1,38 @@
+{
+  "type": "chat",
+  "metadata": {
+    "id": "general_assistant",
+    "name": "General Assistant",
+    "description": "A helpful general-purpose AI assistant",
+    "version": "1.0.0",
+    "author": "System",
+    "created_at": "2024-01-01T00:00:00",
+    "updated_at": "2024-01-01T00:00:00",
+    "tags": ["assistant", "general", "helpful"],
+    "category": "agent",
+    "language": "en",
+    "variables": [
+      {
+        "name": "user_input",
+        "type": "string",
+        "required": true,
+        "description": "The user's input message"
+      },
+      {
+        "name": "context",
+        "type": "string",
+        "required": false,
+        "description": "Additional context for the conversation"
+      }
+    ],
+    "usage_count": 0,
+    "success_rate": 1.0
+  },
+  "system_message": "You are a helpful, accurate, and knowledgeable AI assistant. You provide clear, concise, and helpful responses to user questions.\n\nKey guidelines:\n- Be accurate and factual in your responses\n- If you're unsure about something, say so\n- Provide explanations when helpful\n- Be concise but thorough\n- Always be respectful and professional\n\n{context}",
+  "messages": [
+    {
+      "role": "human",
+      "content": "{user_input}"
+    }
+  ]
+}

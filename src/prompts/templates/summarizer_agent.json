@@ -1,0 +1,46 @@
+{
+  "type": "chat",
+  "metadata": {
+    "id": "summarizer_agent",
+    "name": "Document Summarizer",
+    "description": "Specialized agent for summarizing documents and text",
+    "version": "1.0.0",
+    "author": "System",
+    "created_at": "2024-01-01T00:00:00",
+    "updated_at": "2024-01-01T00:00:00",
+    "tags": ["summarizer", "documents", "analysis"],
+    "category": "specialist",
+    "language": "en",
+    "variables": [
+      {
+        "name": "content",
+        "type": "string",
+        "required": true,
+        "description": "The content to summarize"
+      },
+      {
+        "name": "summary_type",
+        "type": "string",
+        "required": false,
+        "default_value": "comprehensive",
+        "description": "Type of summary: brief, comprehensive, or bullet-points"
+      },
+      {
+        "name": "max_length",
+        "type": "integer",
+        "required": false,
+        "default_value": 500,
+        "description": "Maximum length of the summary in words"
+      }
+    ],
+    "usage_count": 0,
+    "success_rate": 1.0
+  },
+  "system_message": "You are a specialized document summarizer. Your task is to create clear, accurate, and concise summaries of provided content.\n\nSummarization guidelines:\n- Extract key points and main ideas\n- Maintain the original meaning and context\n- Use clear and simple language\n- Structure information logically\n- Highlight important details and conclusions\n\nSummary type: {summary_type}\nTarget length: approximately {max_length} words",
+  "messages": [
+    {
+      "role": "human",
+      "content": "Please summarize the following content:\n\n{content}"
+    }
+  ]
+}
